@@ -63,6 +63,13 @@ def get_all_stats(team1):
     all_games=raw_stats.loc[(raw_stats['Team_Abbrev'] == team1)]
     return all_games
 
+def get_both_team_stats(team1,team2):
+    t1=raw_stats.loc[(raw_stats['Team_Abbrev'] == team1)]
+    t2=raw_stats.loc[(raw_stats['Team_Abbrev'] == team2)]
+    all_games=t1.append(t2)
+    #all_games.to_csv('C:/Users/leose/nba/nba-stats/src/data/test_data.csv')
+    return all_games
+get_both_team_stats('NOP','IND')
 def get_player_stats_last_five_games(player):
     player_stats=raw_stats.loc[raw_stats['player']==player]
     player_stats=player_stats.sort_values('game_date', ascending=False).drop_duplicates('game_date').head(5)
@@ -107,98 +114,6 @@ def set_wins_column(team1):
 
  
 
-def train_model_on_team_with_players(team1,inactive_list):
-    team1_stats=get_all_stats(team1)
-    #team1_stats['W_L']=set_wins_column(team1)
-    
-    team1_stats=team1_stats[~team1_stats['player'].isin(inactive_list)]
-    t1_labels=team1_stats['W_L'].values
-
-    categorical_columns = ['H_A']
-    for column in categorical_columns:
-        tempdf = pd.get_dummies(team1_stats[column], prefix=column)
-        team1_stats = pd.merge(
-            left=team1_stats,
-            right=tempdf,
-            left_index=True,
-            right_index=True,
-        )
-        team1_stats = team1_stats.drop(columns=column)
-    
-    team1_stats=team1_stats.drop(['season','W_L','Team_Abbrev', 'Opponent_Abbrev', 'DKP_per_minute', 'FDP_per_minute', 'SDP_per_minute','Opponent_Score','Team_Score','mp','Inactives',
-                                       'Opponent_Score','game_id','game_date','player_id','Unnamed: 0','Team_pace','Team_efg_pct','Team_tov_pct',
-                                       'Team_orb_pct','Team_ft_rate','Team_off_rtg','Opponent_pace','Opponent_off_rtg','player',
-                                       'Opponent_efg_pct','Opponent_tov_pct','Opponent_orb_pct','Opponent_ft_rate'],axis=1)
- 
-    X_train, X_test, y_train, y_test = train_test_split(
-    team1_stats,t1_labels, test_size=0.2, random_state=42)
-
-    model = XGBClassifier()
-    model.fit(X_train,y_train)
-    return model
-    
-
-def train_model_on_team(team1):
-   team1_stats=get_team_stats_with_opp(team1)
-   #team1_stats['W_L']=set_wins_column(team1)
-
-   t1_labels=team1_stats['W_L'].values
-   team1_stats=team1_stats.drop(['W_L','Opponent_Score','Team_Score'],axis=1)
-   X_train, X_test, y_train, y_test = train_test_split(
-    team1_stats,t1_labels, test_size=0.2, random_state=42)
-
-   model = XGBClassifier()
-   model.fit(X_train,y_train)
-   return model
-
-def predict_winner(team1,team2,num_simulations,with_player_data):
-    if with_player_data:
-         t1_model=train_model_on_team_with_players(team1,[])
-         team2_stats=get_all_stats(team2)
-         
-         categorical_columns = ['H_A']
-         for column in categorical_columns:
-            tempdf = pd.get_dummies(team2_stats[column], prefix=column)
-            team2_stats = pd.merge(
-                left=team2_stats,
-                right=tempdf,
-                left_index=True,
-                right_index=True,
-            )
-            team2_stats = team2_stats.drop(columns=column)
-
-         team2_stats=team2_stats.drop(['season','Team_Abbrev', 'Opponent_Abbrev', 'DKP_per_minute', 'FDP_per_minute', 'SDP_per_minute','Opponent_Score','Team_Score','mp','Inactives',
-                                       'Opponent_Score','game_id','game_date','player_id','Unnamed: 0','Team_pace','Team_efg_pct','Team_tov_pct',
-                                       'Team_orb_pct','Team_ft_rate','Team_off_rtg','Opponent_pace','Opponent_off_rtg','player',
-                                       'Opponent_efg_pct','Opponent_tov_pct','Opponent_orb_pct','Opponent_ft_rate'],axis=1)
-
-  
-    else:
-        t1_model=train_model_on_team(team1)
-        team2_stats=get_team_stats_with_opp(team2).drop(['Opponent_Score','Team_Score'],axis=1)
-   
-    columns=team2_stats.columns
-    team1_wins=0
-    total_games_simulated=0
-
-    for i in range(0,num_simulations):
-        t1_predictions=t1_model.predict(team2_stats)
-       
-        for i in range(0,len(t1_predictions)):
-            total_games_simulated+=1
-            if int(t1_predictions[i])==1:
-                team1_wins+=1
-
-    explainer = shap.TreeExplainer(t1_model)
-    X_importance = team2_stats
-    shap_values = explainer.shap_values(X_importance)     
-    shap.summary_plot(shap_values, X_importance,feature_names=columns,title=team1,show=False)
-    plt.title(team1)
-    plt.show()
-    print('Percentage of the time '+team1+' should win',team1_wins/total_games_simulated)
-
-#predict_winner('NOP','GSW',1,True)
-#predict_winner('GSW','NOP',1,True)
 
 
 
