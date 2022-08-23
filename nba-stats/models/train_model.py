@@ -2,22 +2,25 @@ import shap
 from statistics import mean
 import pandas as pd
 import numpy as np
-import os as os
-import scipy
-import sys
+import os
 
-from xgboost import XGBClassifier
+import pickle as pkl
+from xgboost import XGBClassifier,XGBRegressor
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
-import requests
-from EDA import *
-from get_stats import *
 
+from EDA import *
+from sklearn.metrics import mean_absolute_error
+from get_stats import *
+from sklearn.preprocessing import LabelEncoder
+from sklearn import preprocessing
+import streamlit as st
 
 def train_model_on_all():
+   
     raw_stats=pd.read_csv(r'C:/Users/leose/nba/nba-stats/src/data/wins_modified_data.csv')
-    labels=raw_stats['W_L'].values
-    
+    labels=raw_stats['Team_Score'].values
+
     categorical_columns = ['H_A']
     for column in categorical_columns:
         tempdf = pd.get_dummies(raw_stats[column], prefix=column)
@@ -29,30 +32,36 @@ def train_model_on_all():
         )
         raw_stats = raw_stats.drop(columns=column)
     
-    raw_stats=raw_stats.drop(['season','W_L','Team_Abbrev', 'Opponent_Abbrev', 'DKP_per_minute', 'FDP_per_minute', 'SDP_per_minute','Opponent_Score','Team_Score','mp','Inactives','Unnamed: 0.1',
+    raw_stats=raw_stats.drop(['season','pts','W_L','Team_Abbrev', 'Opponent_Abbrev', 'DKP_per_minute', 'FDP_per_minute', 'SDP_per_minute','Opponent_Score','Team_Score','mp','Inactives','Unnamed: 0.1',
                                        'Opponent_Score','game_id','game_date','player_id','Unnamed: 0','Team_pace','Team_efg_pct','Team_tov_pct','player','W_L',
                                        'Team_orb_pct','Team_ft_rate','Team_off_rtg','Unnamed: 0.1','H_A_A','H_A_H'],axis=1)
-    
+
     X_train, X_test, y_train, y_test = train_test_split(
     raw_stats,labels, test_size=0.2, random_state=42)
 
-    model = XGBClassifier()
+    model = XGBRegressor()
     model.fit(X_train,y_train)
-    return model
-    
-
-
-
-
-def predict_winner_on_all(team1,team2,num_simulations):
-    t1_model=train_model_on_all()
-    stats=get_both_team_stats(team1,team2)
+    preds=model.predict(X_test)
+    scores=mean_absolute_error(preds,y_test)
    
+    pkl.dump(model,open('finalized_model2.sav','wb'))
+
+    return model
+
+train_model_on_all()
+
+def predict_winner_on_all(team1,team2):
+
+    filename ='finalized_model2.sav'
+    t1_model = pkl.load(open(filename, 'rb'))
     
+    stats=get_game_results(team1,team2)
+    actual_scores=stats['Team_Score'].values
+
     categorical_columns = ['H_A']
     for column in categorical_columns:
             tempdf = pd.get_dummies(stats[column], prefix=column)
-            team1_stats = pd.merge(
+            stats = pd.merge(
                 left=stats,
                 right=tempdf,
                 left_index=True,
@@ -60,39 +69,35 @@ def predict_winner_on_all(team1,team2,num_simulations):
             )
             stats = stats.drop(columns=column)
 
-    stats=stats.drop(['season','Team_Abbrev', 'Opponent_Abbrev', 'DKP_per_minute', 'FDP_per_minute', 'SDP_per_minute','Opponent_Score','Team_Score','mp','Inactives','Unnamed: 0.1',
-                                       'Opponent_Score','game_id','game_date','player_id','Unnamed: 0','Unnamed: 0.1','Team_pace','Team_efg_pct','Team_tov_pct',
-                                       'Team_orb_pct','Team_ft_rate','Team_off_rtg','player','W_L'],axis=1)
-
+    stats=stats.drop(['season','pts','W_L','Team_Abbrev', 'Opponent_Abbrev', 'DKP_per_minute', 'FDP_per_minute', 'SDP_per_minute','Opponent_Score','Team_Score','mp','Inactives','Unnamed: 0.1',
+                                       'Opponent_Score','game_id','game_date','player_id','Unnamed: 0','Team_pace','Team_efg_pct','Team_tov_pct','player','W_L',
+                                       'Team_orb_pct','Team_ft_rate','Team_off_rtg','Unnamed: 0.1','H_A_A','H_A_H'],axis=1)
 
  
+    
    
-    columns=stats.columns
+    t1_predictions=t1_model.predict(stats)
+
+    return 'Game prediction '+str(np.mean(t1_predictions)),'Last five scores '+str(actual_scores)
+
+print(predict_winner_on_all('NOP','WAS'))
+#(predict_winner_on_all('WAS','NOP'))
+
+st.title('NBA Prediction App')
+with st.form("Predictions"):
     
-    team1_wins=0
-    team2_wins=0
-    total_games_simulated=0
+   team1=st.selectbox('team1',raw_stats['Team_Abbrev'].unique())
+   team2=st.selectbox('team2',raw_stats['Team_Abbrev'].unique())
 
-    for i in range(0,num_simulations):
-        t1_predictions=t1_model.predict(stats)
-        #t2_predictions=t1_model.predict(team2_stats)[0:3000]
-
-    for pred in t1_predictions:
-        total_games_simulated+=1
-        if pred == 0:
-            team2_wins+=1
-        else:
-            team1_wins+=1
-    
-    explainer = shap.TreeExplainer(t1_model)
-    X_importance = stats
-    shap_values = explainer.shap_values(X_importance)     
-    shap.summary_plot(shap_values, X_importance,feature_names=columns,title=team1,show=False)
-    plt.title(team1)
-    plt.show()
-    
-
-    print('Percentage of the time '+team1+' should win',team1_wins/total_games_simulated)
-    print('Percentage of the time '+team2+' should win',team2_wins/total_games_simulated)
-
-predict_winner_on_all('LAL','PHX',10)
+    # Every form must have a submit button.
+   submitted = st.form_submit_button("Submit")
+   if submitted:
+       st.write(predict_winner_on_all(team1,team2))
+       st.write('team1 last 5 games')
+       st.table(dashboard(team1))
+       st.write('team2 last 5 games')
+       st.table(dashboard(team2))
+       st.write('team1 key players last 5 games')
+       st.table(get_starter_stats_last_five_games(team1))
+       st.write('team2 key players last 5 games')
+       st.table(get_starter_stats_last_five_games(team2))
