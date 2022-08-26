@@ -1,0 +1,2 @@
+ team_label=get_game_results(nba_teams[i],nba_teams[-i])['Team_Score']
+       team_stats=get_game_results(nba_teams[i],nba_teams[-i]).drop(['Team_Score'],axis=1)

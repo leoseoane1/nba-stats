@@ -1,8 +1,10 @@
 {
   "ExpandedNodes": [
     "",
-    "\\models"
+    "\\models",
+    "\\references",
+    "\\reports"
   ],
-  "SelectedNode": "\\models\\EDA.py",
+  "SelectedNode": "\\models\\train_model.py",
   "PreviewInSolutionExplorer": false
 }

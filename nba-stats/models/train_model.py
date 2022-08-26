@@ -20,19 +20,8 @@ def train_model_on_all():
    
     raw_stats=pd.read_csv(r'C:/Users/leose/nba/nba-stats/src/data/wins_modified_data.csv')
     labels=raw_stats['Team_Score'].values
-
-    categorical_columns = ['H_A']
-    for column in categorical_columns:
-        tempdf = pd.get_dummies(raw_stats[column], prefix=column)
-        raw_stats = pd.merge(
-            left=raw_stats,
-            right=tempdf,
-            left_index=True,
-            right_index=True,
-        )
-        raw_stats = raw_stats.drop(columns=column)
     
-    raw_stats=raw_stats.drop(['season','pts','W_L','Team_Abbrev', 'Opponent_Abbrev', 'DKP_per_minute', 'FDP_per_minute', 'SDP_per_minute','Opponent_Score','Team_Score','mp','Inactives','Unnamed: 0.1',
+    raw_stats=raw_stats.drop(['season','HA','pts','W_L','Team_Abbrev', 'Opponent_Abbrev', 'DKP_per_minute', 'FDP_per_minute', 'SDP_per_minute','Opponent_Score','Team_Score','mp','Inactives','Unnamed: 0.1',
                                        'Opponent_Score','game_id','game_date','player_id','Unnamed: 0','Team_pace','Team_efg_pct','Team_tov_pct','player','W_L',
                                        'Team_orb_pct','Team_ft_rate','Team_off_rtg','Unnamed: 0.1','H_A_A','H_A_H'],axis=1)
 
@@ -48,7 +37,7 @@ def train_model_on_all():
 
     return model
 
-train_model_on_all()
+#train_model_on_all()
 
 def predict_winner_on_all(team1,team2):
 
@@ -58,18 +47,7 @@ def predict_winner_on_all(team1,team2):
     stats=get_game_results(team1,team2)
     actual_scores=stats['Team_Score'].values
 
-    categorical_columns = ['H_A']
-    for column in categorical_columns:
-            tempdf = pd.get_dummies(stats[column], prefix=column)
-            stats = pd.merge(
-                left=stats,
-                right=tempdf,
-                left_index=True,
-                right_index=True,
-            )
-            stats = stats.drop(columns=column)
-
-    stats=stats.drop(['season','pts','W_L','Team_Abbrev', 'Opponent_Abbrev', 'DKP_per_minute', 'FDP_per_minute', 'SDP_per_minute','Opponent_Score','Team_Score','mp','Inactives','Unnamed: 0.1',
+    stats=stats.drop(['season','HA','pts','W_L','Team_Abbrev', 'Opponent_Abbrev', 'DKP_per_minute', 'FDP_per_minute', 'SDP_per_minute','Opponent_Score','Team_Score','mp','Inactives','Unnamed: 0.1',
                                        'Opponent_Score','game_id','game_date','player_id','Unnamed: 0','Team_pace','Team_efg_pct','Team_tov_pct','player','W_L',
                                        'Team_orb_pct','Team_ft_rate','Team_off_rtg','Unnamed: 0.1','H_A_A','H_A_H'],axis=1)
 
@@ -80,7 +58,7 @@ def predict_winner_on_all(team1,team2):
 
     return 'Game prediction '+str(np.mean(t1_predictions)),'Last five scores '+str(actual_scores)
 
-print(predict_winner_on_all('NOP','WAS'))
+#print(predict_winner_on_all('NOP','WAS'))
 #(predict_winner_on_all('WAS','NOP'))
 
 st.title('NBA Prediction App')
@@ -93,11 +71,12 @@ with st.form("Predictions"):
    submitted = st.form_submit_button("Submit")
    if submitted:
        st.write(predict_winner_on_all(team1,team2))
+       st.write(predict_winner_on_all(team2,team1))
        st.write('team1 last 5 games')
        st.table(dashboard(team1))
        st.write('team2 last 5 games')
        st.table(dashboard(team2))
-       st.write('team1 key players last 5 games')
+       st.write('team1 key players last head to head games')
        st.table(get_starter_stats_last_five_games(team1))
-       st.write('team2 key players last 5 games')
+       st.write('team2 key players last head to head games')
        st.table(get_starter_stats_last_five_games(team2))

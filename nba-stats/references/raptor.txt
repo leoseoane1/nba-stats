@@ -1,0 +1,77 @@
+team_raptor=pd.read_csv(r'C:/Users/leose/nba/nba-stats/data/raw/modern_RAPTOR_by_team.csv')
+player_raptor=pd.read_csv(r'C:/Users/leose/nba/nba-stats/data/raw/modern_RAPTOR_by_player.csv')
+
+
+ #wait a bit for adding raptor
+def get_player_raptor(player,year):
+    temp_player_raptor=player_raptor.loc[player_raptor['player_name']==player]
+    temp_player_raptor=temp_player_raptor[['raptor_box_offense','raptor_box_defense','raptor_box_total','raptor_onoff_offense','raptor_onoff_defense','raptor_onoff_total','raptor_offense','raptor_defense','raptor_total','war_total','war_reg_season','war_playoffs','predator_offense','predator_defense','predator_total','pace_impact','season']]
+    final_player_raptor=temp_player_raptor.loc[temp_player_raptor['season']==year]
+    return final_player_raptor
+
+ #wait a bit for adding raptor
+def get_team_raptor(team,year):
+    tm_raptor=team_raptor.loc[team_raptor['team'] ==team]
+    tm_raptor=tm_raptor[['raptor_box_offense','raptor_box_defense','raptor_box_total','raptor_onoff_offense','raptor_onoff_defense','raptor_onoff_total','raptor_offense','raptor_defense','raptor_total','war_total','war_reg_season','war_playoffs','predator_offense','predator_defense','predator_total','pace_impact','season']].astype(float)
+    final_tm_raptor=tm_raptor.loc[tm_raptor['season']==year]
+    final_tm_raptor=final_tm_raptor.apply(mean)
+    final_tm_raptor=final_tm_raptor.T
+    final_tm_raptor=final_tm_raptor.apply(pd.to_numeric)
+    final_tm_raptor['team']=team
+    return final_tm_raptor
+
+def run_head_to_head_predictions(team1,team2):
+   team1_raptor=get_team_raptor(team1,2021).to_frame()
+   team1_label=get_game_results(team1,team2)['Team_Score'].values
+   team1_stats=get_game_results(team1,team2).drop(['mp','H_A','Inactives','Team_Score','game_id','game_date','player','player_id'],axis=1)
+   final_df=pd.merge(team1_stats,team1_raptor.T,left_on='Team_Abbrev', right_on='team')
+   final_df=final_df.drop(columns=['Team_Abbrev','Opponent_Abbrev','team'],axis=1)
+   columns=final_df.columns
+   
+   final_df=final_df.values
+
+   team2_raptor=get_team_raptor(team2,2021).to_frame()
+   team2_label=get_game_results(team1,team2)['Opponent_Score'].values
+   
+   team2_stats=get_game_results(team1,team2).drop(['mp','H_A','Inactives','Opponent_Score','game_id','game_date','player','player_id'],axis=1)
+   final_df2=pd.merge(team2_stats,team2_raptor.T,left_on='Opponent_Abbrev', right_on='team')
+   final_df2=final_df2.drop(columns=['Team_Abbrev','Opponent_Abbrev','team'],axis=1)
+   final_df2=final_df2.values
+   X_train, X_test, y_train, y_test = train_test_split(
+    final_df,team1_label, test_size=0.2, random_state=42)
+
+   model = XGBRegressor()
+   model.fit(X_train,y_train)
+   t1_predictions=model.predict(X_test)
+   y1_actual=y_test
+   print('Actual scores',y_test)
+   print('predicted scores',t1_predictions)
+   X_train, X_test, y_train, y_test = train_test_split(
+    final_df2,team2_label, test_size=0.2, random_state=42)
+
+   model = XGBRegressor()
+   model.fit(X_train,y_train)
+   t2_predictions=model.predict(X_test)
+   print('Actual scores',y_test)
+   print('predicted scores',t2_predictions)
+   y2_actual=y_test
+
+   acc=[]
+
+   for i in range(0,len(y1_actual)):
+       acc.append(abs(t1_predictions[i] / y1_actual[i]))
+       acc.append(abs(t2_predictions[i] / y2_actual[i]))
+
+   X_importance = X_test
+
+   # Explain model predictions using shap library:
+   explainer = shap.TreeExplainer(model)
+   shap_values = explainer.shap_values(X_importance)     
+   shap.summary_plot(shap_values, X_importance,feature_names=columns)
+
+   return acc
+
+
+
+
+print(run_head_to_head_predictions('IND','NOP'))

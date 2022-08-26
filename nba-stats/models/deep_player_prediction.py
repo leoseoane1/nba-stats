@@ -70,7 +70,6 @@ if __name__ == '__main__':
   for player in raw_stats['player'].unique():
       temp=raw_stats[raw_stats['player']==player]
       
-      
       if len(temp)<174:
         pass
       else:
