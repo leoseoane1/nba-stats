@@ -32,7 +32,7 @@ def train_model_on_all():
     model.fit(X_train,y_train)
     preds=model.predict(X_test)
     scores=mean_absolute_error(preds,y_test)
-   
+    
     pkl.dump(model,open('finalized_model2.sav','wb'))
 
     return model
