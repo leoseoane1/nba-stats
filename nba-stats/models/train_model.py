@@ -9,7 +9,6 @@ from xgboost import XGBClassifier,XGBRegressor
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
-from EDA import *
 from sklearn.metrics import mean_absolute_error
 from get_stats import *
 from sklearn.preprocessing import LabelEncoder
@@ -21,9 +20,9 @@ def train_model_on_all():
     raw_stats=pd.read_csv(r'C:/Users/leose/nba/nba-stats/src/data/wins_modified_data.csv')
     labels=raw_stats['Team_Score'].values
     
-    raw_stats=raw_stats.drop(['season','HA','pts','W_L','Team_Abbrev', 'Opponent_Abbrev', 'DKP_per_minute', 'FDP_per_minute', 'SDP_per_minute','Opponent_Score','Team_Score','mp','Inactives','Unnamed: 0.1',
+    raw_stats=raw_stats.drop(['season','pts','W_L','Team_Abbrev', 'Opponent_Abbrev', 'DKP_per_minute', 'FDP_per_minute', 'SDP_per_minute','Opponent_Score','Team_Score','mp','Inactives','Unnamed: 0.1',
                                        'Opponent_Score','game_id','game_date','player_id','Unnamed: 0','Team_pace','Team_efg_pct','Team_tov_pct','player','W_L',
-                                       'Team_orb_pct','Team_ft_rate','Team_off_rtg','Unnamed: 0.1','H_A_A','H_A_H'],axis=1)
+                                       'Team_orb_pct','Team_ft_rate','Team_off_rtg','Unnamed: 0.1'],axis=1)
 
     X_train, X_test, y_train, y_test = train_test_split(
     raw_stats,labels, test_size=0.2, random_state=42)
@@ -47,9 +46,9 @@ def predict_winner_on_all(team1,team2):
     stats=get_game_results(team1,team2)
     actual_scores=stats['Team_Score'].values
 
-    stats=stats.drop(['season','HA','pts','W_L','Team_Abbrev', 'Opponent_Abbrev', 'DKP_per_minute', 'FDP_per_minute', 'SDP_per_minute','Opponent_Score','Team_Score','mp','Inactives','Unnamed: 0.1',
+    stats=stats.drop(['season','pts','W_L','Team_Abbrev', 'Opponent_Abbrev', 'DKP_per_minute', 'FDP_per_minute', 'SDP_per_minute','Opponent_Score','Team_Score','mp','Inactives','Unnamed: 0.1',
                                        'Opponent_Score','game_id','game_date','player_id','Unnamed: 0','Team_pace','Team_efg_pct','Team_tov_pct','player','W_L',
-                                       'Team_orb_pct','Team_ft_rate','Team_off_rtg','Unnamed: 0.1','H_A_A','H_A_H'],axis=1)
+                                       'Team_orb_pct','Team_ft_rate','Team_off_rtg','Unnamed: 0.1'],axis=1)
 
  
     

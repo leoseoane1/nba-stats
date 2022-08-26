@@ -19,7 +19,7 @@ import os as os
 from xgboost import XGBClassifier,XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
-from EDA import *
+
 from get_stats import *
 import streamlit as st
 
@@ -28,16 +28,6 @@ def train_model_on_all():
     raw_stats=raw_stats.drop_duplicates(subset=['game_id'])
     labels=raw_stats['ML'].values
 
-    categorical_columns = ['H_A']
-    for column in categorical_columns:
-        tempdf = pd.get_dummies(raw_stats[column], prefix=column)
-        raw_stats = pd.merge(
-            left=raw_stats,
-            right=tempdf,
-            left_index=True,
-            right_index=True,
-        )
-        raw_stats = raw_stats.drop(columns=column)
     
     raw_stats=raw_stats[['Team_pace','Team_efg_pct','Team_tov_pct','Team_orb_pct','Team_ft_rate','Team_off_rtg','Opponent_pace','Opponent_off_rtg',
                                        'Opponent_efg_pct','Opponent_tov_pct','Opponent_orb_pct','Opponent_ft_rate']]
@@ -48,27 +38,24 @@ def train_model_on_all():
 
     model = XGBRegressor()
     model.fit(X_train,y_train)
-    #preds=model.predict(X_test)
-    #res=mean_absolute_error(y_test,preds)
-    #print(res)
+    preds=model.predict(X_test)
+    res=mean_absolute_error(y_test,preds)
+    print('MAE',res)
     return model
     
 def predict_winner_on_all(team1,team2):
     model=train_model_on_all()
-    team1_stats=get_team_stats_with_opp(team1)
+    team1_stats=get_game_results(team1,team2)
+    actual_odds=team1_stats['ML'].values
     
-    #team2_stats=get_team_stats_with_opp(team2)
     team1_stats=team1_stats[['Team_pace','Team_efg_pct','Team_tov_pct','Team_orb_pct','Team_ft_rate','Team_off_rtg','Opponent_pace','Opponent_off_rtg',
                                        'Opponent_efg_pct','Opponent_tov_pct','Opponent_orb_pct','Opponent_ft_rate']]
-    #team2_stats=team2_stats.drop(['Opponent_Score','Team_Score'])
+
     t1_ml=model.predict(team1_stats)
-   # t2_ml=model.predict(team2_stats)
-    print(t1_ml)
-    #print(t2_ml)
-    
+    return 'Game prediction '+str(np.mean(t1_ml)),'Last five scores '+str(actual_odds)
 
-predict_winner_on_all('NOP','IND')
-
+print(predict_winner_on_all('NOP','IND'))
+print(predict_winner_on_all('IND','NOP'))
 '''
 st.title('NBA Prediction App')
 with st.form("Predictions"):

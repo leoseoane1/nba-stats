@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import numpy as np
+from get_stats import *
 
 class PlayerDataset(torch.utils.data.Dataset):
   '''
@@ -16,8 +17,10 @@ class PlayerDataset(torch.utils.data.Dataset):
       # Apply scaling if necessary
       if scale_data:
           X = StandardScaler().fit_transform(X)
-      self.X = torch.from_numpy(X)
-      self.y = torch.from_numpy(y)
+        
+      self.X = torch.from_numpy(np.array(X,dtype=int))
+      self.y = torch.from_numpy(np.array(y,dtype=int))
+      
 
   def __len__(self):
       return len(self.X)
@@ -60,6 +63,7 @@ if __name__ == '__main__':
   # Load Player dataset
   #treat every player as one tensor containing all of their stats
   raw_stats=pd.read_csv(r'C:/Users/leose/nba/nba-stats/src/data/wins_modified_data.csv')
+
   raw_stats=raw_stats[['player','fg','fga','fg_pct','fg3','fg3a','fg3_pct','ft','fta',
                          'ft_pct','orb','drb','trb','ast','stl','blk','tov','pf','plus_minus','ts_pct','efg_pct','fg3a_per_fga_pct',
                          'fta_per_fga_pct','orb_pct','drb_pct','trb_pct','pts',
@@ -80,11 +84,18 @@ if __name__ == '__main__':
           
           X.append(temp)
 
+ 
   X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.2, random_state=42)
+  val_data=get_player_stats_last_five_games('Brandon Ingram')
+  y_val=val_data['pts']
+  X_val=val_data.drop(['player','pts'],axis=1)
+
 
   # Prepare Player dataset
   train_dataset = PlayerDataset(X_train, y_train,scale_data=False)
   test_dataset = PlayerDataset(X_test, y_test,scale_data=False)
+  val_dataset=PlayerDataset(X_val,y_val,scale_data=False)
+
   trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=10, shuffle=True, num_workers=1)
   testloader = torch.utils.data.DataLoader(test_dataset, batch_size=10, shuffle=True, num_workers=1)
 
@@ -160,4 +171,8 @@ if __name__ == '__main__':
 
   # Process is complete.
   print('Training process has finished.')
+
+
+  mlp.eval()
+
 

@@ -29,7 +29,7 @@ import requests
 
 
 #load data into pandas dataframes
-raw_stats=pd.read_csv(r'C:/Users/leose/nba/nba-stats/src/data/wins_modified_data.csv')
+raw_stats=pd.read_csv(r'C:/Users/leose/nba/nba-stats/src/data/wins_odds_modified_data.csv')
 team_raptor=pd.read_csv(r'C:/Users/leose/nba/nba-stats/data/raw/modern_RAPTOR_by_team.csv')
 player_raptor=pd.read_csv(r'C:/Users/leose/nba/nba-stats/data/raw/modern_RAPTOR_by_player.csv')
 
