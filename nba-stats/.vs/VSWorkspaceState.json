@@ -3,8 +3,10 @@
     "",
     "\\models",
     "\\references",
-    "\\reports"
+    "\\reports",
+    "\\src",
+    "\\src\\features"
   ],
-  "SelectedNode": "\\models\\train_model.py",
+  "SelectedNode": "\\src\\features\\get_current_data.py",
   "PreviewInSolutionExplorer": false
 }

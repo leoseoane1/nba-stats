@@ -1,3 +1,4 @@
+from tempfile import tempdir
 import pandas as pd
 import os
 '''
@@ -8,9 +9,12 @@ player_raptor=pd.read_csv(r'C:/Users/leose/nba/nba-stats/data/raw/modern_RAPTOR_
 raw_stats['game_date']=pd.to_datetime(raw_stats['game_date'])
 
 raw_stats.to_csv('C:/Users/leose/nba/nba-stats/src/data/modified_data.csv')
-'''
+
 
 raw_stats=pd.read_csv('C:/Users/leose/nba/nba-stats/src/data/wins_modified_data.csv')
+
+'''
+'''
 categorical_columns = ['H_A']
 for column in categorical_columns:
         tempdf = pd.get_dummies(raw_stats[column], prefix=column)
@@ -20,6 +24,10 @@ for column in categorical_columns:
             left_index=True,
             right_index=True,
         )
-        raw_stats = raw_stats.drop(columns=column)
 
 raw_stats.to_csv('C:/Users/leose/nba/nba-stats/src/data/wins_modified_data.csv')
+
+'''
+raw_stats=pd.read_csv('C:/Users/leose/nba/nba-stats/src/data/wins_odds_modified_data.csv')
+raw_stats=raw_stats[raw_stats['Team_Abbrev']=='NOP']
+raw_stats.to_excel('C:/Users/leose/nba/nba-stats/src/data/wins_odds_modified_data.xlsx')
